@@ -4,43 +4,72 @@ import (
 	"demo/struct/bins"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 )
 
-func SaveLocalBin(bin *bins.Bin) {
+// Storage defines the interface for storage operations
+type Storage interface {
+	SaveBin(bin *bins.Bin) error
+	SaveBinList(binList *bins.BinList) error
+	LoadBinList() (*bins.BinList, error)
+}
 
+// FileSystem defines the interface for file operations
+type FileSystem interface {
+	WriteFile(name string, data []byte, perm fs.FileMode) error
+	ReadFile(name string) ([]byte, error)
+}
+
+// FileStorage implements Storage using the filesystem
+type FileStorage struct {
+	fs FileSystem
+}
+
+// NewFileStorage creates a new FileStorage instance
+func NewFileStorage(fs FileSystem) *FileStorage {
+	return &FileStorage{fs: fs}
+}
+
+// SaveBin implements Storage interface
+func (s *FileStorage) SaveBin(bin *bins.Bin) error {
 	data, err := json.Marshal(bin)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("marshal bin: %w", err)
 	}
-	os.WriteFile("bin.json", data, 0644)
-
+	return s.fs.WriteFile("bin.json", data, 0644)
 }
 
-func SaveLocalBinList(binList *bins.BinList) {
-
+// SaveBinList implements Storage interface
+func (s *FileStorage) SaveBinList(binList *bins.BinList) error {
 	data, err := json.Marshal(binList)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fmt.Errorf("marshal bin list: %w", err)
 	}
-	os.WriteFile("binList.json", data, 0644)
-
+	return s.fs.WriteFile("binList.json", data, 0644)
 }
 
-func ReadFile() (*bins.BinList, error) {
-	var binList bins.BinList
-	data, err := os.ReadFile("binList.json")
+// LoadBinList implements Storage interface
+func (s *FileStorage) LoadBinList() (*bins.BinList, error) {
+	data, err := s.fs.ReadFile("binList.json")
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		return nil, fmt.Errorf("read bin list: %w", err)
 	}
-	err = json.Unmarshal(data, &binList)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
 
+	var binList bins.BinList
+	if err := json.Unmarshal(data, &binList); err != nil {
+		return nil, fmt.Errorf("unmarshal bin list: %w", err)
 	}
 	return &binList, nil
+}
+
+// OSFileSystem implements FileSystem using the OS package
+type OSFileSystem struct{}
+
+func (OSFileSystem) WriteFile(name string, data []byte, perm fs.FileMode) error {
+	return os.WriteFile(name, data, perm)
+}
+
+func (OSFileSystem) ReadFile(name string) ([]byte, error) {
+	return os.ReadFile(name)
 }
