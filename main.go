@@ -47,7 +47,6 @@ func main() {
 	fs := storage.OSFileSystem{}
 	binStorage := storage.NewFileStorage(fs)
 	key := api.Api()
-	name := ""
 
 	// Dispatch based on command
 	switch {
@@ -60,8 +59,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error: --name is required with --create")
 			os.Exit(1)
 		}
-		name = *nameFlag
-		data, err := file.ReadFile(name)
+		data, err := file.ReadFile(*fileFlag)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -93,12 +91,16 @@ func main() {
 		fmt.Println("Ответ сервера:", string(body))
 
 	case *updateFlag:
+		if *fileFlag == "" {
+			fmt.Fprintln(os.Stderr, "Error: --file is required with --create")
+			os.Exit(1)
+		}
 
 		if *idFlag == "" {
 			fmt.Fprintln(os.Stderr, "Error: --id is required with --get")
 			os.Exit(1)
 		}
-		data, err := file.ReadFile(name)
+		data, err := file.ReadFile(*fileFlag)
 		if err != nil {
 			os.Exit(1)
 		}
