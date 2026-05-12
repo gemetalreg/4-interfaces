@@ -2,10 +2,9 @@ package api
 
 import (
 	"demo/struct/config"
-	"fmt"
 )
 
-func api() {
+func Api() string {
 	config := config.NewConfig()
-	fmt.Println(config.Key)
+	return config.Key
 }
