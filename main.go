@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"demo/struct/api"
 	"demo/struct/bins"
+	"demo/struct/file"
 	"demo/struct/storage"
 	"flag"
 	"fmt"
@@ -45,6 +47,7 @@ func main() {
 	fs := storage.OSFileSystem{}
 	binStorage := storage.NewFileStorage(fs)
 	key := api.Api()
+	name := ""
 
 	// Dispatch based on command
 	switch {
@@ -57,9 +60,15 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error: --name is required with --create")
 			os.Exit(1)
 		}
+		name = *nameFlag
+		data, err := file.ReadFile(name)
+		if err != nil {
+			os.Exit(1)
+		}
+
 		client := &http.Client{}
 
-		req, err := http.NewRequest("UPDATE", "https://api.jsonbin.io/v3/b/", nil)
+		req, err := http.NewRequest("POST", "https://api.jsonbin.io/v3/b/", bytes.NewBuffer(data))
 		if err != nil {
 			fmt.Println("Ошибка создания запроса:", err)
 			return
@@ -89,9 +98,14 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error: --id is required with --get")
 			os.Exit(1)
 		}
+		data, err := file.ReadFile(name)
+		if err != nil {
+			os.Exit(1)
+		}
+
 		client := &http.Client{}
 
-		req, err := http.NewRequest("UPDATE", "https://api.jsonbin.io/v3/b/"+*idFlag, nil)
+		req, err := http.NewRequest("PUT", "https://api.jsonbin.io/v3/b/"+*idFlag, bytes.NewBuffer(data))
 		if err != nil {
 			fmt.Println("Ошибка создания запроса:", err)
 			return
