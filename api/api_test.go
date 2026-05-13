@@ -22,24 +22,6 @@ func createTempJSONFile(t *testing.T, content string) *os.File {
 	return tmpfile
 }
 
-// Создание временного файла
-func testTempFile(t *testing.T) *string {
-	file, err := os.CreateTemp("", "*.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(file.Name()) // не забывайте удалять временный файл
-	file.Write([]byte(`{"field":"test"}`))
-	file.Close()
-
-	fileName := file.Name()
-	// теперь fileName — строка, а fileFlag — указатель на неё
-	fileFlag := &fileName
-	return fileFlag
-
-	// Теперь fileFlag можно использовать как *string например в Create(fileFlag, ...)
-}
-
 // Вспомогательная функция для извлечения id bin из ответа сервера
 func extractIDFromCreateResponse(resp string) string {
 	type response struct {
@@ -59,12 +41,12 @@ func TestCreateBin(t *testing.T) {
 
 	// Подготовка параметров (имя не влияет на API)
 
-	fileFlag := testTempFile(t)
+	fileFlag := file.Name()
 	nameFlag := new(string)
 	*nameFlag = "test-bin"
 
 	output := captureOutput(func() {
-		Create(fileFlag, nameFlag)
+		Create(&fileFlag, nameFlag)
 	})
 
 	id := extractIDFromCreateResponse(output)
@@ -81,11 +63,11 @@ func TestUpdateBin(t *testing.T) {
 	// Сначала создаём bin
 	file := createTempJSONFile(t, `{"field": "test-update-init"}`)
 	defer os.Remove(file.Name())
-	fileFlag := testTempFile(t)
+	fileFlag := file.Name()
 	nameFlag := new(string)
 	*nameFlag = "test-bin"
 	createOutput := captureOutput(func() {
-		Create(fileFlag, nameFlag)
+		Create(&fileFlag, nameFlag)
 	})
 	id := extractIDFromCreateResponse(createOutput)
 	defer Delete(&id)
@@ -112,11 +94,11 @@ func TestUpdateBin(t *testing.T) {
 func TestGetBin(t *testing.T) {
 	file := createTempJSONFile(t, `{"field": "test-get"}`)
 	defer os.Remove(file.Name())
-	fileFlag := testTempFile(t)
+	fileFlag := file.Name()
 	nameFlag := new(string)
 	*nameFlag = "test-bin"
 	createOutput := captureOutput(func() {
-		Create(fileFlag, nameFlag)
+		Create(&fileFlag, nameFlag)
 	})
 	id := extractIDFromCreateResponse(createOutput)
 	defer Delete(&id)
@@ -134,11 +116,11 @@ func TestGetBin(t *testing.T) {
 func TestDeleteBin(t *testing.T) {
 	file := createTempJSONFile(t, `{"field": "test-delete"}`)
 	defer os.Remove(file.Name())
-	fileFlag := testTempFile(t)
+	fileFlag := file.Name()
 	nameFlag := new(string)
 	*nameFlag = "test-bin"
 	createOutput := captureOutput(func() {
-		Create(fileFlag, nameFlag)
+		Create(&fileFlag, nameFlag)
 	})
 	id := extractIDFromCreateResponse(createOutput)
 	idFlag := &id
