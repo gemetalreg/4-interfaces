@@ -1,16 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"demo/struct/api"
 	"demo/struct/bins"
-	"demo/struct/file"
 	"demo/struct/storage"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"time"
 )
@@ -46,153 +42,17 @@ func main() {
 
 	fs := storage.OSFileSystem{}
 	binStorage := storage.NewFileStorage(fs)
-	key := api.Api()
 
 	// Dispatch based on command
 	switch {
 	case *createFlag:
-		if *fileFlag == "" {
-			fmt.Fprintln(os.Stderr, "Error: --file is required with --create")
-			os.Exit(1)
-		}
-		if *nameFlag == "" {
-			fmt.Fprintln(os.Stderr, "Error: --name is required with --create")
-			os.Exit(1)
-		}
-		data, err := file.ReadFile(*fileFlag)
-		if err != nil {
-			os.Exit(1)
-		}
-
-		client := &http.Client{}
-
-		req, err := http.NewRequest("POST", "https://api.jsonbin.io/v3/b/", bytes.NewBuffer(data))
-		if err != nil {
-			fmt.Println("Ошибка создания запроса:", err)
-			return
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Master-Key", key)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println("Ошибка отправки запроса:", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println("Ошибка чтения ответа:", err)
-			return
-		}
-
-		fmt.Println("Ответ сервера:", string(body))
-
+		api.Create(fileFlag, nameFlag)
 	case *updateFlag:
-		if *fileFlag == "" {
-			fmt.Fprintln(os.Stderr, "Error: --file is required with --create")
-			os.Exit(1)
-		}
-
-		if *idFlag == "" {
-			fmt.Fprintln(os.Stderr, "Error: --id is required with --get")
-			os.Exit(1)
-		}
-		data, err := file.ReadFile(*fileFlag)
-		if err != nil {
-			os.Exit(1)
-		}
-
-		client := &http.Client{}
-
-		req, err := http.NewRequest("PUT", "https://api.jsonbin.io/v3/b/"+*idFlag, bytes.NewBuffer(data))
-		if err != nil {
-			fmt.Println("Ошибка создания запроса:", err)
-			return
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Master-Key", key)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println("Ошибка отправки запроса:", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println("Ошибка чтения ответа:", err)
-			return
-		}
-
-		fmt.Println("Ответ сервера:", string(body))
-
+		api.Update(fileFlag, idFlag)
 	case *deleteFlag:
-		if *idFlag == "" {
-			fmt.Fprintln(os.Stderr, "Error: --id is required with --delete")
-			os.Exit(1)
-		}
-		client := &http.Client{}
-
-		req, err := http.NewRequest("DELETE", "https://api.jsonbin.io/v3/b/"+*idFlag, nil)
-		if err != nil {
-			fmt.Println("Ошибка создания запроса:", err)
-			return
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Master-Key", key)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println("Ошибка отправки запроса:", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println("Ошибка чтения ответа:", err)
-			return
-		}
-
-		fmt.Println("Ответ сервера:", string(body))
-
+		api.Delete(idFlag)
 	case *getFlag:
-		if *idFlag == "" {
-			fmt.Fprintln(os.Stderr, "Error: --id is required with --get")
-			os.Exit(1)
-		}
-		client := &http.Client{}
-
-		req, err := http.NewRequest("GET", "https://api.jsonbin.io/v3/b/"+*idFlag, nil)
-		if err != nil {
-			fmt.Println("Ошибка создания запроса:", err)
-			return
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Master-Key", key)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println("Ошибка отправки запроса:", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println("Ошибка чтения ответа:", err)
-			return
-		}
-
-		fmt.Println("Ответ сервера:", string(body))
-
+		api.Get(idFlag)
 	case *listFlag:
 		loadedList, err := binStorage.LoadBinList()
 		if err != nil {
@@ -201,7 +61,7 @@ func main() {
 
 		fmt.Println("Loaded bins:")
 		for _, bin := range loadedList.Bins {
-			fmt.Printf("%s: %s)\n", bin.Name, bin.Id)
+			fmt.Printf("%s: %s\n", bin.Name, bin.Id)
 		}
 
 	default:
